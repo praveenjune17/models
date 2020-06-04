@@ -104,7 +104,7 @@ _TEST_DATA_SOURCES = [
 # Vocabulary constants
 _TARGET_VOCAB_SIZE = 32768  # Number of subtokens in the vocabulary list.
 _TARGET_THRESHOLD = 327  # Accept vocabulary if size is within this threshold
-VOCAB_FILE = "vocab.ende.%d" % _TARGET_VOCAB_SIZE
+VOCAB_FILE = "vocab.enta.%d" % _TARGET_VOCAB_SIZE
 
 # Strings to inclue in the generated files.
 _PREFIX = "en_ta_32k"
