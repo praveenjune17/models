@@ -20,7 +20,7 @@ from __future__ import print_function
 
 import os
 import random
-import tarfile
+from shutil import unpack_archive
 
 # pylint: disable=g-bad-import-order
 from absl import app as absl_app
@@ -45,39 +45,59 @@ from official.utils.flags import core as flags_core
 # that generates a vocabulary set that is closest in size to _TARGET_VOCAB_SIZE.
 _TRAIN_DATA_SOURCES = [
     {
-        "url": "http://data.statmt.org/wmt17/translation-task/"
-               "training-parallel-nc-v12.tgz",
-        "input": "news-commentary-v12.de-en.en",
-        "target": "news-commentary-v12.de-en.de",
+        "url": "http://ufal.mff.cuni.cz/~ramasamy/parallel/data/v2/en-ta-parallel-v2.tar.gz",
+        "input": "corpus.bcn.train.en",
+        "target": "corpus.bcn.train.ta",
     },
     {
-        "url": "http://www.statmt.org/wmt13/training-parallel-commoncrawl.tgz",
-        "input": "commoncrawl.de-en.en",
-        "target": "commoncrawl.de-en.de",
+        "url": "https://github.com/praveenjune17/Neural-Machine-Translation-English-Tamil-model/raw/master/Addtional_dataset/github_joshua_corpus.zip",
+        "input": "github_joshua_en",
+        "target": "github_joshua_ta",
     },
     {
-        "url": "http://www.statmt.org/wmt13/training-parallel-europarl-v7.tgz",
-        "input": "europarl-v7.de-en.en",
-        "target": "europarl-v7.de-en.de",
+        "url": "http://opus.nlpl.eu/download.php?f=KDE4/v2/moses/en-ta.txt.zip",
+        "input": "KDE4.en-ta.en",
+        "target": "KDE4.en-ta.ta",
     },
+    {
+        "url": 'http://opus.nlpl.eu/download.php?f=KDE4/v2/moses/en_GB-ta.txt.zip',
+        "input": "KDE4.en_GB-ta.en_GB",
+        "target": "KDE4.en_GB-ta.ta",
+    },
+    
 ]
-# Use pre-defined minimum count to generate subtoken vocabulary.
+source_pairs = ['en_AU', 'en_CA', 'en_NZ', 'en_US']
+target_pairs = ['ta', 'ta_LK']
+opus_sublinks = ['Ubuntu/v14.10/']
+for source_pair in source_pairs:
+  for target_pair in target_pairs:
+    for opus_sublink in opus_sublinks:
+      if source_pair=='en_NZ' and target_pair=='ta_LK':
+        continue
+      site_name = opus_sublink.split('/')[0]
+      opus_source = {
+              "url": f"http://opus.nlpl.eu/download.php?f={opus_sublink}moses/{source_pair}-{target_pair}.txt.zip",
+              "input": f"{site_name}.{source_pair}-{target_pair}.{source_pair}",
+              "target": f"{site_name}.{source_pair}-{target_pair}.{target_pair}",
+          }
+      _TRAIN_DATA_SOURCES.append(opus_source)
+# # Use pre-defined minimum count to generate subtoken vocabulary.
 _TRAIN_DATA_MIN_COUNT = 6
 
 _EVAL_DATA_SOURCES = [
     {
-        "url": "http://data.statmt.org/wmt17/translation-task/dev.tgz",
-        "input": "newstest2013.en",
-        "target": "newstest2013.de",
-    }
+        "url": "http://ufal.mff.cuni.cz/~ramasamy/parallel/data/v2/en-ta-parallel-v2.tar.gz",
+        "input": "corpus.bcn.dev.en",
+        "target": "corpus.bcn.dev.ta",
+    },
+    
 ]
 
 _TEST_DATA_SOURCES = [
     {
-        "url": ("https://storage.googleapis.com/tf-perf-public/"
-                "official_transformer/test_data/newstest2014.tgz"),
-        "input": "newstest2014.en",
-        "target": "newstest2014.de",
+        "url": "http://ufal.mff.cuni.cz/~ramasamy/parallel/data/v2/en-ta-parallel-v2.tar.gz",
+        "input": "corpus.bcn.test.en",
+        "target": "corpus.bcn.test.ta",
     }
 ]
 
@@ -87,7 +107,7 @@ _TARGET_THRESHOLD = 327  # Accept vocabulary if size is within this threshold
 VOCAB_FILE = "vocab.ende.%d" % _TARGET_VOCAB_SIZE
 
 # Strings to inclue in the generated files.
-_PREFIX = "wmt32k"
+_PREFIX = "en_ta_32k"
 _TRAIN_TAG = "train"
 _EVAL_TAG = "dev"  # Following WMT and Tensor2Tensor conventions, in which the
 # evaluation datasets are tagged as "dev" for development.
@@ -207,9 +227,8 @@ def download_and_extract(path, url, input_filename, target_filename):
 
   # Extract compressed files
   logging.info("Extracting %s." % compressed_file)
-  with tarfile.open(compressed_file, "r:gz") as corpus_tar:
-    corpus_tar.extractall(path)
-
+  zip_type = 'gztar' if compressed_file.endswith('.tar.gz') else 'zip'
+  unpack_archive(compressed_file, path, zip_type)
   # Return file paths of the requested files.
   input_file = find_file(path, input_filename)
   target_file = find_file(path, target_filename)
